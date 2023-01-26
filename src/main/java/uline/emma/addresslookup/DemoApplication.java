@@ -79,7 +79,7 @@ public class DemoApplication {
 
 
             CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems(
-                    "SELECT top 100000 c.sitename,c.displayname,c.emailaddress FROM UlineAddressBookPOC c", queryOptions, SiteBean.class);
+                    "SELECT top 1000000 c.sitename,c.displayname,c.emailaddress FROM UlineAddressBookPOC c", queryOptions, SiteBean.class);
                     LOGGER.info("Container query created ");    
                 for (SiteBean bean : familiesPagedIterable) {
                     LOGGER.info("bean = " + bean);
