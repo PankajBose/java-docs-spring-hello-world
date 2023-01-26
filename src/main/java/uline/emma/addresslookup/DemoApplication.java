@@ -35,7 +35,7 @@ public class DemoApplication {
 
 	@GetMapping("/search")
     public static String search(@RequestParam String siteName, @RequestParam String displayName) {
-        long l = System.currentTimeMillis();
+        //long l = System.currentTimeMillis();
 
         Map<String, String> matchedData = new HashMap<>();
 
@@ -49,7 +49,7 @@ public class DemoApplication {
         }
 
 
-        LOGGER.info("time taken = " + (System.currentTimeMillis() - l) + "ms");
+        //LOGGER.info("time taken = " + (System.currentTimeMillis() - l) + "ms");
         return matchedData.toString();
     }
 
@@ -79,7 +79,7 @@ public class DemoApplication {
 
 
             CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems(
-                    "SELECT top 100 c.sitename,c.displayname,c.emailaddress FROM UlineAddressBookPOC c", queryOptions, SiteBean.class);
+                    "SELECT top 100000 c.sitename,c.displayname,c.emailaddress FROM UlineAddressBookPOC c", queryOptions, SiteBean.class);
                     LOGGER.info("Container query created ");    
                 for (SiteBean bean : familiesPagedIterable) {
                     LOGGER.info("bean = " + bean);
