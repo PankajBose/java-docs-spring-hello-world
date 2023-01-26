@@ -33,7 +33,7 @@ public class DemoApplication {
 		return "Hello World!";
 	}
 
-	@GetMapping(name = "/search")
+	@GetMapping("/search")
     public static String search(@RequestParam String siteName, @RequestParam String displayName) {
         long l = System.currentTimeMillis();
 
