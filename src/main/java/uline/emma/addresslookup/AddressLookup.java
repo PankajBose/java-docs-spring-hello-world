@@ -3,9 +3,6 @@ package uline.emma.addresslookup;
 import com.azure.cosmos.*;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.util.CosmosPagedIterable;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -15,9 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @SpringBootApplication
 @RestController
@@ -36,8 +31,8 @@ public class AddressLookup {
     }
 
     @GetMapping(value = "/search", headers = "content-type=application/json")
-    public static String search(@RequestParam String siteName, @RequestParam String displayName) {
-        JsonArray matchedData = new JsonArray();
+    public static List<Map<String, String>> search(@RequestParam String siteName, @RequestParam String displayName) {
+        List<Map<String, String>> matchedData = new ArrayList<>();
 
         Map<String, String> personInfo = siteData.get(siteName);
         if (personInfo != null) for (Map.Entry<String, String> entry : personInfo.entrySet()) {
@@ -45,13 +40,13 @@ public class AddressLookup {
             String email = entry.getValue();
 
             if (personName.toLowerCase().contains(displayName) || email.toLowerCase().contains(displayName)) {
-                JsonObject data = new JsonObject();
-                data.add("n", new JsonPrimitive(personName));
-                data.add("e", new JsonPrimitive(email));
+                Map<String, String> data = new HashMap<>();
+                data.put("n", personName);
+                data.put("e", email);
                 matchedData.add(data);
             }
         }
-        return matchedData.toString();
+        return matchedData;
     }
 
     private static void loadFromCosmosDB() {
