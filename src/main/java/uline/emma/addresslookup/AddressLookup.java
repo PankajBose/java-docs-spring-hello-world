@@ -7,6 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -27,11 +30,11 @@ public class AddressLookup {
 
     @RequestMapping("/")
     String sayHello() {
-        return "Welcome to address lookup application. Build: 2023-01-27 00:01";
+        return "Welcome to address lookup application. Build: 2023-01-27 00:09";
     }
 
-    @GetMapping(value = "/search"/*, headers = "content-type=application/json"*/)
-    public static List<Map<String, String>> search(@RequestParam String siteName, @RequestParam String displayName) {
+    @GetMapping("/search")
+    public static ResponseEntity<List<Map<String, String>>> search(@RequestParam String siteName, @RequestParam String displayName) {
         List<Map<String, String>> matchedData = new ArrayList<>();
 
         Map<String, String> personInfo = siteData.get(siteName);
@@ -46,7 +49,11 @@ public class AddressLookup {
                 matchedData.add(data);
             }
         }
-        return matchedData;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.put("content-type", Collections.singletonList("application/json"));
+
+        return new ResponseEntity<>(matchedData, headers, HttpStatus.OK);
     }
 
     private static void loadFromCosmosDB() {
