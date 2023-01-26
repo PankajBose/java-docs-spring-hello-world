@@ -54,7 +54,7 @@ public class DemoApplication {
     }
 
     @GetMapping("/load")
-    public static void loadFromCosmosDB() {
+    public static String loadFromCosmosDB() {
         try (CosmosClient client = new CosmosClientBuilder()
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
@@ -82,14 +82,17 @@ public class DemoApplication {
                     "SELECT top 100 c.sitename,c.displayname,c.emailaddress FROM UlineAddressBookPOC c", queryOptions, SiteBean.class);
                     LOGGER.info("Container query created ");    
                 for (SiteBean bean : familiesPagedIterable) {
-                System.out.println("bean = " + bean);
+                    LOGGER.info("bean = " + bean);
                 Map<String, String> personInfo = siteData.computeIfAbsent(bean.getSitename(), k -> new HashMap<>());
                 personInfo.put(bean.getDisplayname(), bean.getEmailaddress());
+                
             }
+            return "data load successful!";
         }
         catch(Exception e)
         {
             LOGGER.error("Database connection error:", e);
+            return e.getMessage();
         }
     }
 }
