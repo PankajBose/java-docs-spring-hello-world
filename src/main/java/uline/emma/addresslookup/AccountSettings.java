@@ -10,7 +10,7 @@ public class AccountSettings {
             System.getProperty("ACCOUNT_KEY",
                     StringUtils.defaultString(StringUtils.trimToNull(
                                     System.getenv().get("ACCOUNT_KEY")),
-                            "wTwA19DqqxEwFBrEYDGv5rGAuLkr5Tk6ov9N1FSLAh9r7h7a35Xb9OAp8Yknup8AW5xYGYx1njWWvsjzW8GqEw=="));
+                            "5pM04MuG3TrYhatwXOOZ3QISa9jNi50aYT2VtJoPvILjQJ5t3faqxbkkisHVlx7t4hf7t3s4vshx0a5xk8uDcA=="));
 
     public static String HOST =
             System.getProperty("ACCOUNT_HOST",
