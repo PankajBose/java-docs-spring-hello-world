@@ -16,11 +16,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SpringBootApplication
 @RestController
 public class DemoApplication {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(DemoApplication.class);
 	private static final Map<String, Map<String, String>> siteData = new HashMap<>();
 	public static void main(String[] args) {
 		SpringApplication.run(DemoApplication.class, args);
@@ -61,9 +63,11 @@ public class DemoApplication {
                 .buildClient()) {
 
             CosmosDatabase database = client.getDatabase("my-database");
+            LOGGER.info("Database connected : my-database");
 
             CosmosDatabaseResponse read = database.read();
             System.out.println("read = " + read);
+            LOGGER.info("Database read sucecssful : my-database");
 
             CosmosContainer container = database.getContainer("UlineAddressBookPOC");
             CosmosContainerResponse read1 = container.read();
@@ -80,6 +84,10 @@ public class DemoApplication {
                 Map<String, String> personInfo = siteData.computeIfAbsent(bean.getSitename(), k -> new HashMap<>());
                 personInfo.put(bean.getDisplayname(), bean.getEmailaddress());
             }
+        }
+        catch(Exception e)
+        {
+            LOGGER.error("Database connection error:", e);
         }
     }
 }
