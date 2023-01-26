@@ -65,13 +65,13 @@ public class DemoApplication {
             CosmosDatabase database = client.getDatabase("my-database");
             LOGGER.info("Database connected : my-database");
 
-            CosmosDatabaseResponse read = database.read();
-            System.out.println("read = " + read);
-            LOGGER.info("Database read sucecssful : my-database");
+         //   CosmosDatabaseResponse read = database.read();
+         //   System.out.println("read = " + read);
+         //   LOGGER.info("Database read sucecssful : my-database");
 
             CosmosContainer container = database.getContainer("UlineAddressBookPOC");
-            CosmosContainerResponse read1 = container.read();
-            System.out.println("read1 = " + read1);
+        //    CosmosContainerResponse read1 = container.read();
+        //    System.out.println("read1 = " + read1);
 
             CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
             queryOptions.setQueryMetricsEnabled(true);
