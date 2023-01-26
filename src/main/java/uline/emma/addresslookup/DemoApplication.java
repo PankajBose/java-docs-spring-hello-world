@@ -58,7 +58,7 @@ public class DemoApplication {
         try (CosmosClient client = new CosmosClientBuilder()
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
-                .preferredRegions(Collections.singletonList("East US 2"))
+             //   .preferredRegions(Collections.singletonList("East US 2"))
                 .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildClient()) {
 
