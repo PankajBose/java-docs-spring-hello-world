@@ -34,7 +34,7 @@ public class DemoApplication {
 	}
 
 	@GetMapping(name = "/search")
-    public static void search(@RequestParam String siteName, @RequestParam String displayName) {
+    public static String search(@RequestParam String siteName, @RequestParam String displayName) {
         long l = System.currentTimeMillis();
 
         Map<String, String> matchedData = new HashMap<>();
@@ -48,9 +48,9 @@ public class DemoApplication {
                 matchedData.put(personName, email);
         }
 
-        System.out.println("matchedData = " + matchedData);
 
-        System.out.println("time taken = " + (System.currentTimeMillis() - l) + "ms");
+        LOGGER.info("time taken = " + (System.currentTimeMillis() - l) + "ms");
+        return matchedData.toString();
     }
 
     @GetMapping("/load")
