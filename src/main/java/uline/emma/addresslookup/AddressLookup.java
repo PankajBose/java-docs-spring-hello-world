@@ -27,10 +27,10 @@ public class AddressLookup {
 
     @RequestMapping("/")
     String sayHello() {
-        return "Welcome to address lookup application";
+        return "Welcome to address lookup application. Build: 2023-01-27 00:01";
     }
 
-    @GetMapping(value = "/search", headers = "content-type=application/json")
+    @GetMapping(value = "/search"/*, headers = "content-type=application/json"*/)
     public static List<Map<String, String>> search(@RequestParam String siteName, @RequestParam String displayName) {
         List<Map<String, String>> matchedData = new ArrayList<>();
 
