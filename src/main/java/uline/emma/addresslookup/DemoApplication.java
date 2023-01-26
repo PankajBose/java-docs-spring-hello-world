@@ -72,6 +72,7 @@ public class DemoApplication {
             CosmosContainer container = database.getContainer("UlineAddressBookPOC");
         //    CosmosContainerResponse read1 = container.read();
         //    System.out.println("read1 = " + read1);
+            LOGGER.info("Container read sucecssful : UlineAddressBookPOC");
 
             CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
             queryOptions.setQueryMetricsEnabled(true);
@@ -79,7 +80,8 @@ public class DemoApplication {
 
             CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems(
                     "SELECT top 100 c.sitename,c.displayname,c.emailaddress FROM UlineAddressBookPOC c", queryOptions, SiteBean.class);
-            for (SiteBean bean : familiesPagedIterable) {
+                    LOGGER.info("Container query created ");    
+                for (SiteBean bean : familiesPagedIterable) {
                 System.out.println("bean = " + bean);
                 Map<String, String> personInfo = siteData.computeIfAbsent(bean.getSitename(), k -> new HashMap<>());
                 personInfo.put(bean.getDisplayname(), bean.getEmailaddress());
