@@ -7,53 +7,59 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @SpringBootApplication
 @RestController
 public class AddressLookup {
     private static final Logger LOGGER = LoggerFactory.getLogger(AddressLookup.class);
-    private static final Map<String, Map<String, String>> siteData = Collections.synchronizedMap(new HashMap<>());
+    private static final Map<String, Map<String, String>> siteData = new HashMap<>();
 
     public static void main(String[] args) {
-        SpringApplication.run(AddressLookup.class, args);
         loadFromCosmosDB();
+
+        SpringApplication.run(AddressLookup.class, args);
     }
 
     @RequestMapping("/")
-    String sayHello() {
-        return "Welcome to address lookup application. Build: 2023-01-27 00:09";
+    String welcome() {
+        return "Welcome to address lookup application. Build: 2023-01-27 23:00\n" +
+                "Usages: \n" +
+                "GET: /search?siteName=global&displayName=central\n" +
+                "POST: /add?siteName=newSite&email=newEmail&displayName=newDisplayName";
     }
 
-    @GetMapping("/search")
-    public static ResponseEntity<List<Map<String, String>>> search(@RequestParam String siteName, @RequestParam String displayName) {
+    @GetMapping(value = "/search", produces = "application/json")
+    public static List<Map<String, String>> search(@RequestParam String siteName, @RequestParam String displayName) {
         List<Map<String, String>> matchedData = new ArrayList<>();
 
         Map<String, String> personInfo = siteData.get(siteName);
         if (personInfo != null) for (Map.Entry<String, String> entry : personInfo.entrySet()) {
-            String personName = entry.getKey();
-            String email = entry.getValue();
+            String email = entry.getKey();
+            String personName = entry.getValue();
 
             if (personName.toLowerCase().contains(displayName) || email.toLowerCase().contains(displayName)) {
                 Map<String, String> data = new HashMap<>();
-                data.put("n", personName);
                 data.put("e", email);
+                data.put("n", personName);
                 matchedData.add(data);
             }
         }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.put("content-type", Collections.singletonList("application/json"));
+        return matchedData;
+    }
 
-        return new ResponseEntity<>(matchedData, headers, HttpStatus.OK);
+    @PostMapping("/add")
+    public static String add(@RequestParam String siteName, @RequestParam String email, @RequestParam String displayName) {
+        Map<String, String> personInfo = siteData.computeIfAbsent(siteName, k -> new HashMap<>());
+        personInfo.put(email, displayName);
+
+        return "Data added";
     }
 
     private static void loadFromCosmosDB() {
@@ -72,13 +78,16 @@ public class AddressLookup {
             CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
             queryOptions.setQueryMetricsEnabled(true);
 
-            CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems(
-                    "SELECT top 1000000 c.sitename,c.displayname,c.emailaddress FROM UlineAddressBookPOC c", queryOptions, SiteBean.class);
+            CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.sitename,c.displayname,c.emailaddress FROM UlineAddressBookPOC c", queryOptions, SiteBean.class);
             LOGGER.info("Container query created ");
+            long i = 0;
             for (SiteBean bean : familiesPagedIterable) {
-                LOGGER.info("bean = " + bean);
+                if (i % 10_00_000 == 0) LOGGER.info("loaded data = " + i);
+
                 Map<String, String> personInfo = siteData.computeIfAbsent(bean.getSitename(), k -> new HashMap<>());
-                personInfo.put(bean.getDisplayname(), bean.getEmailaddress());
+                personInfo.put(bean.getEmailaddress(), bean.getDisplayname());
+
+                i++;
             }
         }
     }
