@@ -26,11 +26,11 @@ public class AddressLookup {
         SpringApplication.run(AddressLookup.class, args);
     }
 
-    @RequestMapping("/")
+    @RequestMapping(value = "/", produces = "text/html")
     String welcome() {
-        return "Welcome to address lookup application. Build: 2023-01-27 23:00\n" +
-                "Usages: \n" +
-                "GET: /search?siteName=global&displayName=central\n" +
+        return "Welcome to address lookup application. Build: 2023-01-28 12:30<br>" +
+                "Usages:<br/>" +
+                "GET: /search?siteName=global&displayName=central<br/>" +
                 "POST: /add?siteName=newSite&email=newEmail&displayName=newDisplayName";
     }
 
