@@ -2,7 +2,8 @@ package uline.emma.addresslookup;
 
 public class SiteBean {
     private String sitename;
-    private String displayname;
+    private String firstname;
+    private String lastname;
     private String emailaddress;
 
     public String getSitename() {
@@ -13,14 +14,6 @@ public class SiteBean {
         this.sitename = sitename;
     }
 
-    public String getDisplayname() {
-        return displayname;
-    }
-
-    public void setDisplayname(String displayname) {
-        this.displayname = displayname;
-    }
-
     public String getEmailaddress() {
         return emailaddress;
     }
@@ -29,12 +22,19 @@ public class SiteBean {
         this.emailaddress = emailaddress;
     }
 
-    @Override
-    public String toString() {
-        return "SiteBean{" +
-                "sitename='" + sitename + '\'' +
-                ", displayname='" + displayname + '\'' +
-                ", emailaddress='" + emailaddress + '\'' +
-                '}';
+    public String getFirstname() {
+        return firstname;
+    }
+
+    public void setFirstname(String firstname) {
+        this.firstname = firstname;
+    }
+
+    public String getLastname() {
+        return lastname;
+    }
+
+    public void setLastname(String lastname) {
+        this.lastname = lastname;
     }
 }
