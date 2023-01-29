@@ -12,10 +12,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @SpringBootApplication
 @RestController
@@ -35,7 +32,7 @@ public class AddressLookup {
 
     @RequestMapping(value = "/", produces = "text/html")
     String welcome() {
-        return "Welcome to EMMA address lookup application. Build: 2023-01-29 14:00<br>" +
+        return "Welcome to EMMA address lookup application. Build: 2023-01-29 14:45<br>" +
                 "Usages:<br/>" +
                 "GET: /search?siteName=global&query=central<br/>" +
                 "POST: /add?siteName=newSite&email=newEmail&firstname=newFirstName&lastname=newLastName";
@@ -70,7 +67,7 @@ public class AddressLookup {
             Map<String, NameBean> personInfo = siteData.computeIfAbsent(siteName, k -> new HashMap<>());
             personInfo.put(email, new NameBean(firstname, lastname));
 
-            SiteBean siteBean = new SiteBean(siteName, firstname, lastname, email);
+            SiteBean siteBean = new SiteBean(UUID.randomUUID().toString(), siteName, firstname, lastname, email);
             //  <CreateItem>
             //  Create item using container that we created using sync client
 
