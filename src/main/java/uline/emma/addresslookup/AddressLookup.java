@@ -63,25 +63,15 @@ public class AddressLookup {
 
     @PostMapping("/add")
     public static String add(@RequestParam String siteName, @RequestParam String email, @RequestParam String firstname, @RequestParam String lastname) {
-        try {
-            Map<String, NameBean> personInfo = siteData.computeIfAbsent(siteName, k -> new HashMap<>());
-            personInfo.put(email, new NameBean(firstname, lastname));
+        Map<String, NameBean> personInfo = siteData.computeIfAbsent(siteName, k -> new HashMap<>());
+        personInfo.put(email, new NameBean(firstname, lastname));
 
-            SiteBean siteBean = new SiteBean(UUID.randomUUID().toString(), siteName, firstname, lastname, email);
-            //  <CreateItem>
-            //  Create item using container that we created using sync client
+        SiteBean siteBean = new SiteBean(UUID.randomUUID().toString(), siteName, firstname, lastname, email);
+        CosmosItemRequestOptions cosmosItemRequestOptions = new CosmosItemRequestOptions();
+        CosmosItemResponse<SiteBean> item = container.createItem(siteBean, new PartitionKey(siteBean.getSitename()), cosmosItemRequestOptions);
+        LOGGER.info("item = " + item);
 
-            //  Use lastName as partitionKey for cosmos item
-            //  Using appropriate partition key improves the performance of database operations
-            CosmosItemRequestOptions cosmosItemRequestOptions = new CosmosItemRequestOptions();
-            CosmosItemResponse<SiteBean> item = container.createItem(siteBean, new PartitionKey(siteBean.getSitename()), cosmosItemRequestOptions);
-            //  </CreateItem>
-
-
-            return "Data added";
-        } catch (Exception e) {
-            return e.getMessage();
-        }
+        return "Data added";
     }
 
     private static void loadFromCosmosDB() {
