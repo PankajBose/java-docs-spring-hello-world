@@ -1,7 +1,10 @@
 package uline.emma.addresslookup;
 
 import com.azure.cosmos.*;
+import com.azure.cosmos.models.CosmosItemRequestOptions;
+import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
+import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +23,10 @@ public class AddressLookup {
     private static final Logger LOGGER = LoggerFactory.getLogger(AddressLookup.class);
     private static final Map<String, Map<String, NameBean>> siteData = new HashMap<>();
 
+    private static CosmosClient client;
+    private static CosmosDatabase database;
+    private static CosmosContainer container;
+
     public static void main(String[] args) {
         loadFromCosmosDB();
 
@@ -28,7 +35,7 @@ public class AddressLookup {
 
     @RequestMapping(value = "/", produces = "text/html")
     String welcome() {
-        return "Welcome to EMMA address lookup application. Build: 2023-01-29 11:00<br>" +
+        return "Welcome to EMMA address lookup application. Build: 2023-01-29 13:00<br>" +
                 "Usages:<br/>" +
                 "GET: /search?siteName=global&query=central<br/>" +
                 "POST: /add?siteName=newSite&email=newEmail&firstname=newFirstName&lastname=newLastName";
@@ -62,36 +69,46 @@ public class AddressLookup {
         Map<String, NameBean> personInfo = siteData.computeIfAbsent(siteName, k -> new HashMap<>());
         personInfo.put(email, new NameBean(firstname, lastname));
 
+        SiteBean siteBean = new SiteBean(siteName, firstname, lastname, email);
+        //  <CreateItem>
+        //  Create item using container that we created using sync client
+
+        //  Use lastName as partitionKey for cosmos item
+        //  Using appropriate partition key improves the performance of database operations
+        CosmosItemRequestOptions cosmosItemRequestOptions = new CosmosItemRequestOptions();
+        CosmosItemResponse<SiteBean> item = container.createItem(siteBean, new PartitionKey(siteBean.getSitename()), cosmosItemRequestOptions);
+        //  </CreateItem>
+
+
         return "Data added";
     }
 
     private static void loadFromCosmosDB() {
-        try (CosmosClient client = new CosmosClientBuilder()
+        client = new CosmosClientBuilder()
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
                 .consistencyLevel(ConsistencyLevel.EVENTUAL)
-                .buildClient()) {
+                .buildClient();
 
-            CosmosDatabase database = client.getDatabase("my-database");
-            LOGGER.info("Database connected : my-database");
+        database = client.getDatabase("my-database");
+        LOGGER.info("Database connected : my-database");
 
-            CosmosContainer container = database.getContainer("UlineAddressBookPOC3");
-            LOGGER.info("Container read successful : UlineAddressBookPOC3");
+        container = database.getContainer("UlineAddressBookPOC3");
+        LOGGER.info("Container read successful : UlineAddressBookPOC3");
 
-            CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
-            queryOptions.setQueryMetricsEnabled(true);
+        CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
+        queryOptions.setQueryMetricsEnabled(true);
 
-            CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.sitename,c.emailaddress,c.firstname,c.lastname FROM UlineAddressBookPOC3 c", queryOptions, SiteBean.class);
-            LOGGER.info("Container query created ");
-            long i = 0;
-            for (SiteBean bean : familiesPagedIterable) {
-                if (i % 10_00_000 == 0) LOGGER.info("loaded data = " + i);
+        CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.sitename,c.emailaddress,c.firstname,c.lastname FROM UlineAddressBookPOC3 c", queryOptions, SiteBean.class);
+        LOGGER.info("Container query created ");
+        long i = 0;
+        for (SiteBean bean : familiesPagedIterable) {
+            if (i % 10_00_000 == 0) LOGGER.info("loaded data = " + i);
 
-                Map<String, NameBean> personInfo = siteData.computeIfAbsent(bean.getSitename(), k -> new HashMap<>());
-                personInfo.put(bean.getEmailaddress(), new NameBean(bean.getFirstname(), bean.getLastname()));
+            Map<String, NameBean> personInfo = siteData.computeIfAbsent(bean.getSitename(), k -> new HashMap<>());
+            personInfo.put(bean.getEmailaddress(), new NameBean(bean.getFirstname(), bean.getLastname()));
 
-                i++;
-            }
+            i++;
         }
     }
 }

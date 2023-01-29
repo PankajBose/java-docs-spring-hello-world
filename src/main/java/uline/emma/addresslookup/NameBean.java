@@ -4,6 +4,9 @@ public class NameBean {
     private String firstname;
     private String lastname;
 
+    public NameBean() {
+    }
+
     public NameBean(String firstname, String lastname) {
         this.firstname = firstname.trim();
         this.lastname = lastname.trim();

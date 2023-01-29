@@ -6,6 +6,16 @@ public class SiteBean {
     private String lastname;
     private String emailaddress;
 
+    public SiteBean() {
+    }
+
+    public SiteBean(String sitename, String firstname, String lastname, String emailaddress) {
+        this.sitename = sitename;
+        this.firstname = firstname;
+        this.lastname = lastname;
+        this.emailaddress = emailaddress;
+    }
+
     public String getSitename() {
         return sitename;
     }
