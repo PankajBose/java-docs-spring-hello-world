@@ -35,7 +35,7 @@ public class AddressLookup {
 
     @RequestMapping(value = "/", produces = "text/html")
     String welcome() {
-        return "Welcome to EMMA address lookup application. Build: 2023-01-29 13:00<br>" +
+        return "Welcome to EMMA address lookup application. Build: 2023-01-29 14:00<br>" +
                 "Usages:<br/>" +
                 "GET: /search?siteName=global&query=central<br/>" +
                 "POST: /add?siteName=newSite&email=newEmail&firstname=newFirstName&lastname=newLastName";
@@ -66,21 +66,25 @@ public class AddressLookup {
 
     @PostMapping("/add")
     public static String add(@RequestParam String siteName, @RequestParam String email, @RequestParam String firstname, @RequestParam String lastname) {
-        Map<String, NameBean> personInfo = siteData.computeIfAbsent(siteName, k -> new HashMap<>());
-        personInfo.put(email, new NameBean(firstname, lastname));
+        try {
+            Map<String, NameBean> personInfo = siteData.computeIfAbsent(siteName, k -> new HashMap<>());
+            personInfo.put(email, new NameBean(firstname, lastname));
 
-        SiteBean siteBean = new SiteBean(siteName, firstname, lastname, email);
-        //  <CreateItem>
-        //  Create item using container that we created using sync client
+            SiteBean siteBean = new SiteBean(siteName, firstname, lastname, email);
+            //  <CreateItem>
+            //  Create item using container that we created using sync client
 
-        //  Use lastName as partitionKey for cosmos item
-        //  Using appropriate partition key improves the performance of database operations
-        CosmosItemRequestOptions cosmosItemRequestOptions = new CosmosItemRequestOptions();
-        CosmosItemResponse<SiteBean> item = container.createItem(siteBean, new PartitionKey(siteBean.getSitename()), cosmosItemRequestOptions);
-        //  </CreateItem>
+            //  Use lastName as partitionKey for cosmos item
+            //  Using appropriate partition key improves the performance of database operations
+            CosmosItemRequestOptions cosmosItemRequestOptions = new CosmosItemRequestOptions();
+            CosmosItemResponse<SiteBean> item = container.createItem(siteBean, new PartitionKey(siteBean.getSitename()), cosmosItemRequestOptions);
+            //  </CreateItem>
 
 
-        return "Data added";
+            return "Data added";
+        } catch (Exception e) {
+            return e.getMessage();
+        }
     }
 
     private static void loadFromCosmosDB() {
