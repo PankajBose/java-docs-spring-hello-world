@@ -78,7 +78,7 @@ public class AddressLookup {
 
             SiteBean siteBean = new SiteBean(UUID.randomUUID().toString(), request.getSite(), request.getFirstname(), request.getLastname(), request.getEmail());
             CosmosItemRequestOptions cosmosItemRequestOptions = new CosmosItemRequestOptions();
-            CosmosItemResponse<SiteBean> item = container.createItem(siteBean, new PartitionKey(siteBean.getSitename()), cosmosItemRequestOptions);
+            CosmosItemResponse<SiteBean> item = container.upsertItem(siteBean, new PartitionKey(siteBean.getSitename()), cosmosItemRequestOptions);
             LOGGER.info("item = " + item);
         }
 
