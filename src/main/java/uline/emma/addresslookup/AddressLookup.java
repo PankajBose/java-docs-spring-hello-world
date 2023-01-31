@@ -1,6 +1,10 @@
 package uline.emma.addresslookup;
 
-import com.azure.cosmos.*;
+import com.azure.cosmos.ConsistencyLevel;
+import com.azure.cosmos.CosmosClient;
+import com.azure.cosmos.CosmosClientBuilder;
+import com.azure.cosmos.CosmosContainer;
+import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
@@ -10,18 +14,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.*;
+import javax.validation.Valid;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @SpringBootApplication
 @RestController
 public class AddressLookup {
     private static final Logger LOGGER = LoggerFactory.getLogger(AddressLookup.class);
     private static final Map<String, Map<String, NameBean>> siteData = new HashMap<>();
-
-    private static CosmosClient client;
-    private static CosmosDatabase database;
     private static CosmosContainer container;
 
     public static void main(String[] args) {
@@ -32,7 +43,7 @@ public class AddressLookup {
 
     @RequestMapping(value = "/", produces = "text/html")
     String welcome() {
-        return "Welcome to EMMA address lookup application. Build: 2023-01-29 14:45<br>" +
+        return "Welcome to EMMA address lookup application. Build: 2023-01-31 17:30<br>" +
                 "Usages:<br/>" +
                 "GET: /search?siteName=global&query=central<br/>" +
                 "POST: /add?siteName=newSite&email=newEmail&firstname=newFirstName&lastname=newLastName";
@@ -62,26 +73,28 @@ public class AddressLookup {
     }
 
     @PostMapping("/add")
-    public static String add(@RequestParam String siteName, @RequestParam String email, @RequestParam String firstname, @RequestParam String lastname) {
-        Map<String, NameBean> personInfo = siteData.computeIfAbsent(siteName, k -> new HashMap<>());
-        personInfo.put(email, new NameBean(firstname, lastname));
+    public static String add(@Valid @RequestBody List<AddRequest> addRequests) {
+        for (AddRequest request : addRequests) {
+            Map<String, NameBean> personInfo = siteData.computeIfAbsent(request.getSite(), k -> new HashMap<>());
+            personInfo.put(request.getEmail(), new NameBean(request.getFirstname(), request.getLastname()));
 
-        SiteBean siteBean = new SiteBean(UUID.randomUUID().toString(), siteName, firstname, lastname, email);
-        CosmosItemRequestOptions cosmosItemRequestOptions = new CosmosItemRequestOptions();
-        CosmosItemResponse<SiteBean> item = container.createItem(siteBean, new PartitionKey(siteBean.getSitename()), cosmosItemRequestOptions);
-        LOGGER.info("item = " + item);
+            SiteBean siteBean = new SiteBean(UUID.randomUUID().toString(), request.getSite(), request.getFirstname(), request.getLastname(), request.getEmail());
+            CosmosItemRequestOptions cosmosItemRequestOptions = new CosmosItemRequestOptions();
+            CosmosItemResponse<SiteBean> item = container.createItem(siteBean, new PartitionKey(siteBean.getSitename()), cosmosItemRequestOptions);
+            LOGGER.info("item = " + item);
+        }
 
         return "Data added";
     }
 
     private static void loadFromCosmosDB() {
-        client = new CosmosClientBuilder()
+        CosmosClient client = new CosmosClientBuilder()
                 .endpoint(AccountSettings.HOST)
                 .key(AccountSettings.MASTER_KEY)
                 .consistencyLevel(ConsistencyLevel.EVENTUAL)
                 .buildClient();
 
-        database = client.getDatabase("my-database");
+        CosmosDatabase database = client.getDatabase("my-database");
         LOGGER.info("Database connected : my-database");
 
         container = database.getContainer("UlineAddressBookPOC3");
