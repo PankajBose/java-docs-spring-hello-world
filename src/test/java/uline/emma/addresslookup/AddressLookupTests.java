@@ -9,7 +9,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,8 +35,9 @@ class AddressLookupTests {
     @Test
     void add() throws IOException {
         CloseableHttpClient httpClient = HttpClients.createDefault();
-        HttpPost httpPost = new HttpPost("https://uline-hello-world.azurewebsites.net/add?siteName=newSite&email=newEmail&firstname=newFirstName&lastname=newLastName");
-        StringEntity params = new StringEntity(IOUtils.toString(new FileInputStream("src/test/resources/add-request.json")));
+        HttpPost httpPost = new HttpPost("https://uline-hello-world.azurewebsites.net/add");
+        final String body = IOUtils.toString(getClass().getClassLoader().getResourceAsStream("add-request.json"));
+        StringEntity params = new StringEntity(body);
         httpPost.addHeader("content-type", "application/json");
         httpPost.setEntity(params);
         HttpResponse httpResponse = httpClient.execute(httpPost);

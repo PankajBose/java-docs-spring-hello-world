@@ -10,6 +10,7 @@ import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.util.CosmosPagedIterable;
+import io.micrometer.core.instrument.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -43,10 +44,7 @@ public class AddressLookup {
 
     @RequestMapping(value = "/", produces = "text/html")
     String welcome() {
-        return "Welcome to EMMA address lookup application. Build: 2023-01-31 18:00<br>" +
-                "Usages:<br/>" +
-                "GET: /search?siteName=global&query=central<br/>" +
-                "POST: /add?siteName=newSite&email=newEmail&firstname=newFirstName&lastname=newLastName";
+        return IOUtils.toString(getClass().getClassLoader().getResourceAsStream("welcome-message.html"));
     }
 
     @GetMapping(value = "/search", produces = "application/json")
