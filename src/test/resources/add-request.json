@@ -1,0 +1,14 @@
+[
+  {
+    "site": "site1",
+    "email": "site1@mail.com",
+    "firstname": "firstname1",
+    "lastname": "lastname1"
+  },
+  {
+    "site": "site2",
+    "email": "site2@mail.com",
+    "firstname": "firstname2",
+    "lastname": "lastname2"
+  }
+]

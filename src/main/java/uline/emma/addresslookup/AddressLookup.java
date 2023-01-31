@@ -43,7 +43,7 @@ public class AddressLookup {
 
     @RequestMapping(value = "/", produces = "text/html")
     String welcome() {
-        return "Welcome to EMMA address lookup application. Build: 2023-01-31 17:30<br>" +
+        return "Welcome to EMMA address lookup application. Build: 2023-01-31 18:00<br>" +
                 "Usages:<br/>" +
                 "GET: /search?siteName=global&query=central<br/>" +
                 "POST: /add?siteName=newSite&email=newEmail&firstname=newFirstName&lastname=newLastName";
