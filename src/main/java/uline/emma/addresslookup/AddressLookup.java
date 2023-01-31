@@ -35,6 +35,7 @@ public class AddressLookup {
     private static final Logger LOGGER = LoggerFactory.getLogger(AddressLookup.class);
     private static final Map<String, Map<String, NameBean>> siteData = new HashMap<>();
     private static CosmosContainer container;
+    private static final String welcomeContent = IOUtils.toString(AddressLookup.class.getClassLoader().getResourceAsStream("welcome-message.html"));
 
     public static void main(String[] args) {
         loadFromCosmosDB();
@@ -44,7 +45,7 @@ public class AddressLookup {
 
     @RequestMapping(value = "/", produces = "text/html")
     String welcome() {
-        return IOUtils.toString(getClass().getClassLoader().getResourceAsStream("welcome-message.html"));
+        return welcomeContent;
     }
 
     @GetMapping(value = "/search", produces = "application/json")
