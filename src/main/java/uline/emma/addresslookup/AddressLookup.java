@@ -75,9 +75,11 @@ public class AddressLookup {
     public static String add(@Valid @RequestBody List<AddRequest> addRequests) {
         for (AddRequest request : addRequests) {
             Map<String, NameBean> personInfo = siteData.computeIfAbsent(request.getSite(), k -> new HashMap<>());
-            personInfo.put(request.getEmail(), new NameBean(request.getFirstname(), request.getLastname()));
+            final String email = request.getEmail().toLowerCase();
+            personInfo.put(email, new NameBean(request.getFirstname(), request.getLastname()));
 
-            SiteBean siteBean = new SiteBean(UUID.randomUUID().toString(), request.getSite(), request.getFirstname(), request.getLastname(), request.getEmail());
+            final String id = UUID.nameUUIDFromBytes(email.getBytes()).toString();
+            SiteBean siteBean = new SiteBean(id, request.getSite(), request.getFirstname(), request.getLastname(), email);
             CosmosItemRequestOptions cosmosItemRequestOptions = new CosmosItemRequestOptions();
             CosmosItemResponse<SiteBean> item = container.upsertItem(siteBean, new PartitionKey(siteBean.getSitename()), cosmosItemRequestOptions);
             LOGGER.info("item = " + item);

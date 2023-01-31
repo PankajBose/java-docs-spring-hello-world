@@ -1,7 +1,13 @@
 package uline.emma.addresslookup;
 
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotEmpty;
+
 public class AddRequest {
+    @NotEmpty(message = "Site cannot be empty")
     private String site;
+    @NotEmpty(message = "Email cannot be empty")
+    @Email
     private String email;
     private String firstname;
     private String lastname;
