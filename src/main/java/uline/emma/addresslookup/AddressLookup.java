@@ -105,7 +105,7 @@ public class AddressLookup {
         queryOptions.setQueryMetricsEnabled(true);
 
         CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.sitename,c.emailaddress,c.firstname,c.lastname FROM TestContainer c where c.displayname !=\"\"", queryOptions, SiteBean.class);
-        LOGGER.info("Container query created ");
+        LOGGER.info("Container query created");
         long i = 0;
         for (SiteBean bean : familiesPagedIterable) {
             if (i % 10_00_000 == 0) LOGGER.info("loaded data = " + i);
