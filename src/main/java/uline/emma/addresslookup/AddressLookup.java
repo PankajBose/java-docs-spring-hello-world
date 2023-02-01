@@ -104,7 +104,7 @@ public class AddressLookup {
         CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
         queryOptions.setQueryMetricsEnabled(true);
 
-        CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.sitename,c.emailaddress,c.firstname,c.lastname FROM UlineAddressBookPOC3 c", queryOptions, SiteBean.class);
+        CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.sitename,c.emailaddress,c.firstname,c.lastname FROM TestContainer c where c.displayname !=\"\"", queryOptions, SiteBean.class);
         LOGGER.info("Container query created ");
         long i = 0;
         for (SiteBean bean : familiesPagedIterable) {
