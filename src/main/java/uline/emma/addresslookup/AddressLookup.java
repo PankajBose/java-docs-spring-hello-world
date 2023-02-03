@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,22 +48,23 @@ public class AddressLookup {
     }
 
     @GetMapping(value = "/search", produces = "application/json")
-    public static List<Map<String, String>> search(@RequestParam String siteName, @RequestParam String query) {
+    public static Map<String, String> search(@RequestParam String sites, @RequestParam String query) {
         query = query.toLowerCase();
-        List<Map<String, String>> matchedData = new ArrayList<>();
+        Map<String, String> matchedData = new HashMap<>();
+        final String[] siteNames = sites.split(",");
 
-        Map<String, NameBean> personInfo = siteData.get(siteName);
-        if (personInfo != null) for (Map.Entry<String, NameBean> entry : personInfo.entrySet()) {
-            String email = entry.getKey().toLowerCase();
-            NameBean nameBean = entry.getValue();
-            String firstName = nameBean.getFirstname().toLowerCase();
-            String lastname = nameBean.getLastname().toLowerCase();
+        for (String siteName : siteNames) {
+            Map<String, NameBean> personInfo = siteData.get(siteName);
+            if (personInfo != null) for (Map.Entry<String, NameBean> entry : personInfo.entrySet()) {
+                String email = entry.getKey().toLowerCase();
+                NameBean nameBean = entry.getValue();
+                String firstName = nameBean.getFirstname().toLowerCase();
+                String lastname = nameBean.getLastname().toLowerCase();
 
-            if (email.startsWith(query) || firstName.startsWith(query) || lastname.startsWith(query)) {
-                Map<String, String> data = new HashMap<>();
-                data.put("e", email);
-                data.put("n", nameBean.getName());
-                matchedData.add(data);
+                if (email.startsWith(query) || firstName.startsWith(query) || lastname.startsWith(query)) {
+                    matchedData.put("e", email);
+                    matchedData.put("n", nameBean.getName());
+                }
             }
         }
 
@@ -76,6 +76,8 @@ public class AddressLookup {
         for (AddRequest request : addRequests) {
             Map<String, NameBean> personInfo = siteData.computeIfAbsent(request.getSite(), k -> new HashMap<>());
             final String email = request.getEmail().toLowerCase();
+            if (personInfo.containsKey(email)) continue;
+
             personInfo.put(email, new NameBean(request.getFirstname(), request.getLastname()));
 
             final String id = UUID.nameUUIDFromBytes(email.getBytes()).toString();
