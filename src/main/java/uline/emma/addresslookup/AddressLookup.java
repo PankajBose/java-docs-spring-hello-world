@@ -103,13 +103,13 @@ public class AddressLookup {
         CosmosDatabase database = client.getDatabase("my-database");
         LOGGER.info("Database connected : my-database");
 
-        container = database.getContainer("UlineAddressBookPOC3");
-        LOGGER.info("Container read successful : UlineAddressBookPOC3");
+        container = database.getContainer("UlineAddressBook");
+        LOGGER.info("Container read successful : UlineAddressBook");
 
         CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
         queryOptions.setQueryMetricsEnabled(true);
 
-        CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.sitename,c.emailaddress,c.firstname,c.lastname FROM TestContainer c where c.displayname !=\"\"", queryOptions, SiteBean.class);
+        CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.sitename,c.emailaddress,c.firstname,c.lastname FROM UlineAddressBook c where c.displayname !=\"\"", queryOptions, SiteBean.class);
         LOGGER.info("Container query created");
         long i = 0;
         for (SiteBean bean : familiesPagedIterable) {
