@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,9 +49,9 @@ public class AddressLookup {
     }
 
     @GetMapping(value = "/search", produces = "application/json")
-    public static Map<String, String> search(@RequestParam String sites, @RequestParam String query) {
+    public static List<Map<String, String>> search(@RequestParam String sites, @RequestParam String query) {
         query = query.toLowerCase();
-        Map<String, String> matchedData = new HashMap<>();
+        List<Map<String, String>> matchedData = new ArrayList<>();
         final String[] siteNames = sites.split(",");
 
         for (String siteName : siteNames) {
@@ -62,8 +63,10 @@ public class AddressLookup {
                 String lastname = nameBean.getLastname().toLowerCase();
 
                 if (email.startsWith(query) || firstName.startsWith(query) || lastname.startsWith(query)) {
-                    matchedData.put("e", email);
-                    matchedData.put("n", nameBean.getName());
+                    Map<String, String> data = new HashMap<>();
+                    data.put("e", email);
+                    data.put("n", nameBean.getName());
+                    matchedData.add(data);
                 }
             }
         }
