@@ -8,8 +8,8 @@ public class NameBean {
     }
 
     public NameBean(String firstname, String lastname) {
-        this.firstname = firstname == null ? null : firstname.trim();
-        this.lastname = lastname == null ? null : lastname.trim();
+        this.firstname = firstname == null ? "" : firstname.trim();
+        this.lastname = lastname == null ? "" : lastname.trim();
     }
 
     public String getFirstname() {
