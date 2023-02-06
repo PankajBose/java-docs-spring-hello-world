@@ -58,7 +58,7 @@ public class AddressLookup {
             Map<String, NameBean> personInfo = siteData.get(siteName);
             if (personInfo != null) for (Map.Entry<String, NameBean> entry : personInfo.entrySet()) {
                 String email = entry.getKey().toLowerCase();
-                NameBean nameBean = entry.getValue();
+                final NameBean nameBean = entry.getValue();
                 String firstName = nameBean.getFirstname().toLowerCase();
                 String lastname = nameBean.getLastname().toLowerCase();
 
