@@ -1,10 +1,6 @@
 package uline.emma.addresslookup;
 
-import com.azure.cosmos.ConsistencyLevel;
-import com.azure.cosmos.CosmosClient;
-import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.CosmosContainer;
-import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.*;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
@@ -15,19 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @SpringBootApplication
 @RestController
@@ -36,6 +23,7 @@ public class AddressLookup {
     private static final Map<String, Map<String, NameBean>> siteData = new HashMap<>();
     private static CosmosContainer container;
     private static final String welcomeContent = IOUtils.toString(AddressLookup.class.getClassLoader().getResourceAsStream("welcome-message.html"));
+    private static long loaded = 0;
 
     public static void main(String[] args) {
         loadFromCosmosDB();
@@ -45,7 +33,7 @@ public class AddressLookup {
 
     @RequestMapping(value = "/", produces = "text/html")
     String welcome() {
-        return welcomeContent;
+        return welcomeContent + " Loaded " + loaded + " documents.";
     }
 
     @GetMapping(value = "/search", produces = "application/json")
@@ -94,31 +82,33 @@ public class AddressLookup {
     }
 
     private static void loadFromCosmosDB() {
-        CosmosClient client = new CosmosClientBuilder()
-                .endpoint(AccountSettings.HOST)
-                .key(AccountSettings.MASTER_KEY)
-                .consistencyLevel(ConsistencyLevel.EVENTUAL)
-                .buildClient();
+        new Thread(() -> {
+            CosmosClient client = new CosmosClientBuilder()
+                    .endpoint(AccountSettings.HOST)
+                    .key(AccountSettings.MASTER_KEY)
+                    .consistencyLevel(ConsistencyLevel.EVENTUAL)
+                    .buildClient();
 
-        CosmosDatabase database = client.getDatabase("my-database");
-        LOGGER.info("Database connected : my-database");
+            CosmosDatabase database = client.getDatabase("my-database");
+            LOGGER.info("Database connected : my-database");
 
-        container = database.getContainer("ulineaddressbook");
-        LOGGER.info("Container read successful : ulineaddressbook");
+            container = database.getContainer("ulineaddressbook");
+            LOGGER.info("Container read successful : ulineaddressbook");
 
-        CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
-        queryOptions.setQueryMetricsEnabled(true);
+            CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
+            queryOptions.setQueryMetricsEnabled(true);
 
-        CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.sitename,c.emailaddress,c.firstname,c.lastname FROM ulineaddressbook c", queryOptions, SiteBean.class);
-        LOGGER.info("Container query created");
-        long i = 0;
-        for (SiteBean bean : familiesPagedIterable) {
-            if (i % 10_00_000 == 0) LOGGER.info("loaded data = " + i);
+            CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.sitename,c.emailaddress,c.firstname,c.lastname FROM ulineaddressbook c", queryOptions, SiteBean.class);
+            LOGGER.info("Container query created");
 
-            Map<String, NameBean> personInfo = siteData.computeIfAbsent(bean.getSitename(), k -> new HashMap<>());
-            personInfo.put(bean.getEmailaddress(), new NameBean(bean.getFirstname(), bean.getLastname()));
+            for (SiteBean bean : familiesPagedIterable) {
+                if (loaded % 10_00_000 == 0) LOGGER.info("loaded data = " + loaded);
 
-            i++;
-        }
+                Map<String, NameBean> personInfo = siteData.computeIfAbsent(bean.getSitename(), k -> new HashMap<>());
+                personInfo.put(bean.getEmailaddress(), new NameBean(bean.getFirstname(), bean.getLastname()));
+
+                loaded++;
+            }
+        }).start();
     }
 }
