@@ -47,10 +47,10 @@ public class AddressLookup {
             if (personInfo != null) for (Map.Entry<String, NameBean> entry : personInfo.entrySet()) {
                 String email = entry.getKey().toLowerCase();
                 final NameBean nameBean = entry.getValue();
-                String firstName = nameBean.getFirstname().toLowerCase();
+                String firstname = nameBean.getFirstname().toLowerCase();
                 String lastname = nameBean.getLastname().toLowerCase();
 
-                if (email.startsWith(query) || firstName.startsWith(query) || lastname.startsWith(query)) {
+                if (email.startsWith(query) || firstname.startsWith(query) || lastname.startsWith(query)) {
                     Map<String, String> data = new HashMap<>();
                     data.put("e", email);
                     data.put("n", nameBean.getName());
