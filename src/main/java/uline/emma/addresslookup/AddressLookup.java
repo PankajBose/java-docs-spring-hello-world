@@ -2,7 +2,6 @@ package uline.emma.addresslookup;
 
 import com.azure.cosmos.*;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
-import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.util.CosmosPagedIterable;
@@ -39,7 +38,7 @@ public class AddressLookup {
     @GetMapping(value = "/search", produces = "application/json")
     public static List<Map<String, String>> search(@RequestParam String sites, @RequestParam String query) {
         query = query.toLowerCase();
-        List<Map<String, String>> matchedData = new ArrayList<>();
+        List<MatchedBean> foundNameBeans = new ArrayList<>();
         final String[] siteNames = sites.split(",");
 
         for (String siteName : siteNames) {
@@ -51,12 +50,19 @@ public class AddressLookup {
                 String lastname = nameBean.getLastname().toLowerCase();
 
                 if (email.startsWith(query) || firstname.startsWith(query) || lastname.startsWith(query)) {
-                    Map<String, String> data = new HashMap<>();
-                    data.put("e", email);
-                    data.put("n", nameBean.getName());
-                    matchedData.add(data);
+                    foundNameBeans.add(new MatchedBean(email, nameBean.getName(), nameBean.getLastusedtime()));
                 }
             }
+        }
+
+        foundNameBeans.sort((o1, o2) -> o2.getLastUsed().compareTo(o1.getLastUsed()));
+
+        List<Map<String, String>> matchedData = new ArrayList<>();
+        for (MatchedBean bean : foundNameBeans) {
+            Map<String, String> data = new HashMap<>();
+            data.put("e", bean.getEmail());
+            data.put("n", bean.getName());
+            matchedData.add(data);
         }
 
         return matchedData;
@@ -67,15 +73,20 @@ public class AddressLookup {
         for (AddRequest request : addRequests) {
             Map<String, NameBean> personInfo = siteData.computeIfAbsent(request.getSite(), k -> new HashMap<>());
             final String email = request.getEmail().toLowerCase();
-            if (personInfo.containsKey(email)) continue;
-
-            personInfo.put(email, new NameBean(request.getFirstname(), request.getLastname()));
-
+            final NameBean nameBean = personInfo.get(email);
+            final Date currentDate = new Date();
             final String id = UUID.nameUUIDFromBytes(email.getBytes()).toString();
-            SiteBean siteBean = new SiteBean(id, request.getSite(), request.getFirstname(), request.getLastname(), email);
-            CosmosItemRequestOptions cosmosItemRequestOptions = new CosmosItemRequestOptions();
-            CosmosItemResponse<SiteBean> item = container.upsertItem(siteBean, new PartitionKey(siteBean.getSitename()), cosmosItemRequestOptions);
-            LOGGER.info("item = " + item);
+            SiteBean siteBean = new SiteBean(id, request.getSite(), request.getFirstname(), request.getLastname(), email, currentDate);
+
+            if (nameBean == null) {
+                personInfo.put(email, new NameBean(request.getFirstname(), request.getLastname(), currentDate));
+
+                container.upsertItem(siteBean, new PartitionKey(siteBean.getSitename()), new CosmosItemRequestOptions());
+            } else {
+                nameBean.setLastusedtime(currentDate);
+
+                container.upsertItem(siteBean, new PartitionKey(siteBean.getSitename()), new CosmosItemRequestOptions());
+            }
         }
 
         return "Data added";
@@ -98,14 +109,14 @@ public class AddressLookup {
             CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
             queryOptions.setQueryMetricsEnabled(true);
 
-            CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.sitename,c.emailaddress,c.firstname,c.lastname FROM ulineaddressbook c where c.emailaddress !=''", queryOptions, SiteBean.class);
+            CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.sitename,c.emailaddress,c.firstname,c.lastname,c.lastusedtime FROM ulineaddressbook c where c.emailaddress !=''", queryOptions, SiteBean.class);
             LOGGER.info("Container query created");
 
             for (SiteBean bean : familiesPagedIterable) {
                 if (loaded % 10_00_000 == 0) LOGGER.info("loaded data = " + loaded);
 
                 Map<String, NameBean> personInfo = siteData.computeIfAbsent(bean.getSitename(), k -> new HashMap<>());
-                personInfo.put(bean.getEmailaddress(), new NameBean(bean.getFirstname(), bean.getLastname()));
+                personInfo.put(bean.getEmailaddress(), new NameBean(bean.getFirstname(), bean.getLastname(), bean.getLastusedtime()));
 
                 loaded++;
             }

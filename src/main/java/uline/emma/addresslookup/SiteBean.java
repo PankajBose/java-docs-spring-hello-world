@@ -1,21 +1,25 @@
 package uline.emma.addresslookup;
 
+import java.util.Date;
+
 public class SiteBean {
     private String id;
     private String sitename;
     private String firstname;
     private String lastname;
     private String emailaddress;
+    private Date lastusedtime;
 
     public SiteBean() {
     }
 
-    public SiteBean(String id, String sitename, String firstname, String lastname, String emailaddress) {
+    public SiteBean(String id, String sitename, String firstname, String lastname, String emailaddress, Date lastusedtime) {
         this.id = id;
         this.sitename = sitename;
         this.firstname = firstname;
         this.lastname = lastname;
         this.emailaddress = emailaddress;
+        this.lastusedtime = lastusedtime;
     }
 
     public String getId() {
@@ -56,5 +60,13 @@ public class SiteBean {
 
     public void setLastname(String lastname) {
         this.lastname = lastname;
+    }
+
+    public Date getLastusedtime() {
+        return lastusedtime;
+    }
+
+    public void setLastusedtime(Date lastusedtime) {
+        this.lastusedtime = lastusedtime;
     }
 }

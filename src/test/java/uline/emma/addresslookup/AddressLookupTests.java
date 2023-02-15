@@ -10,9 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
 @SpringBootTest
 class AddressLookupTests {
@@ -48,5 +46,17 @@ class AddressLookupTests {
         while (sc.hasNext()) {
             System.out.println(sc.nextLine());
         }
+    }
+
+    @Test
+    void descendingTest() {
+        List<MatchedBean> foundNameBeans = new ArrayList<>();
+        foundNameBeans.add(new MatchedBean("a", "a", new Date(2023, Calendar.FEBRUARY, 15)));
+        foundNameBeans.add(new MatchedBean("b", "b", new Date(2023, Calendar.FEBRUARY, 14)));
+        foundNameBeans.add(new MatchedBean("c", "c", new Date(2023, Calendar.FEBRUARY, 16)));
+
+        foundNameBeans.sort((o1, o2) -> o2.getLastUsed().compareTo(o1.getLastUsed()));
+
+        System.out.println("foundNameBeans = " + foundNameBeans);
     }
 }
