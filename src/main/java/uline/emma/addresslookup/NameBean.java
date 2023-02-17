@@ -1,11 +1,24 @@
 package uline.emma.addresslookup;
 
+import java.util.Calendar;
 import java.util.Date;
 
 public class NameBean {
     private String firstname;
     private String lastname;
     private Date lastusedtime;
+    private static final Date defualtDate;
+
+    static {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.YEAR, 2000);
+        calendar.set(Calendar.MONTH, 0);
+        calendar.set(Calendar.DAY_OF_MONTH, 1);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        defualtDate = calendar.getTime();
+    }
 
     public NameBean() {
     }
@@ -13,7 +26,7 @@ public class NameBean {
     public NameBean(String firstname, String lastname, Date lastusedtime) {
         this.firstname = firstname == null ? "" : firstname.trim();
         this.lastname = lastname == null ? "" : lastname.trim();
-        this.lastusedtime = lastusedtime == null ? new Date() : lastusedtime;
+        this.lastusedtime = lastusedtime == null ? defualtDate : lastusedtime;
     }
 
     public String getFirstname() {
