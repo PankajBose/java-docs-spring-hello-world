@@ -13,7 +13,7 @@ public class NameBean {
     public NameBean(String firstname, String lastname, Date lastusedtime) {
         this.firstname = firstname == null ? "" : firstname.trim();
         this.lastname = lastname == null ? "" : lastname.trim();
-        this.lastusedtime = lastusedtime;
+        this.lastusedtime = lastusedtime == null ? new Date() : lastusedtime;
     }
 
     public String getFirstname() {
