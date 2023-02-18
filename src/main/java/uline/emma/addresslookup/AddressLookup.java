@@ -93,14 +93,11 @@ public class AddressLookup {
     }
 
     private static String getName(String firstname, String lastname) {
-        int firstnameLength = firstname.length();
-        int lastnameLength = lastname.length();
+        if (firstname == null && lastname == null) return "";
 
-        if (firstnameLength == 0 && lastnameLength == 0) return "";
+        if (lastname == null) return firstname;
 
-        if (lastnameLength == 0) return firstname;
-
-        if (firstnameLength == 0) return lastname;
+        if (firstname == null) return lastname;
 
         return firstname + " " + lastname;
     }
@@ -130,7 +127,7 @@ public class AddressLookup {
     }
 
     @PostMapping("/update")
-    public static Set<String> update(@RequestParam String date) {
+    public static void update(@RequestParam String date) {
         Date updateDate = NameBean.defualtDate;
         if (date == null || date.trim().length() == 0) ;
         else {
@@ -142,21 +139,36 @@ public class AddressLookup {
             }
         }
 
-        Set<String> updated = new HashSet<>();
         CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.id,c.sitename FROM ulineaddressbook c " +
                 "where not is_defined(c.lastusedtime)", new CosmosQueryRequestOptions(), SiteBean.class);
+        Map<String, Set<String>> idsToUpdate = new HashMap<>();
         for (SiteBean siteBean : familiesPagedIterable) {
             String id = siteBean.getId();
             String sitename = siteBean.getSitename();
 
-            CosmosPatchOperations cosmosPatchOperations = CosmosPatchOperations.create();
-            cosmosPatchOperations.add("/lastusedtime", updateDate);
-            CosmosItemResponse<SiteBean> dateCosmosItemResponse = container.patchItem(id, new PartitionKey(sitename), cosmosPatchOperations, SiteBean.class);
-            dateCosmosItemResponse.getItem();
-            updated.add(id);
+            Set<String> ids = idsToUpdate.computeIfAbsent(sitename, k -> new HashSet<>());
+            ids.add(id);
         }
 
-        return updated;
+        for (Map.Entry<String, Set<String>> entry : idsToUpdate.entrySet()) {
+            String site = entry.getKey();
+            Set<String> ids = entry.getValue();
+
+            CosmosBatch cosmosBatch = CosmosBatch.createCosmosBatch(new PartitionKey(site));
+            for (String id : ids) {
+                CosmosPatchOperations cosmosPatchOperations = CosmosPatchOperations.create();
+                cosmosPatchOperations.add("/lastusedtime", updateDate);
+                cosmosBatch.patchItemOperation(id, cosmosPatchOperations);
+
+                if (cosmosBatch.getOperations().size() >= 100) {
+                    container.executeCosmosBatch(cosmosBatch);
+                    cosmosBatch = CosmosBatch.createCosmosBatch(new PartitionKey(site));
+                }
+            }
+
+            if (cosmosBatch.getOperations().size() > 0)
+                container.executeCosmosBatch(cosmosBatch);
+        }
     }
 
     private static void loadFromCosmosDB() {
