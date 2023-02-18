@@ -11,6 +11,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 @SpringBootApplication
@@ -125,6 +127,36 @@ public class AddressLookup {
         }
 
         return "Data added";
+    }
+
+    @PostMapping("/update")
+    public static Set<String> update(@RequestParam String date) {
+        Date updateDate = NameBean.defualtDate;
+        if (date == null || date.trim().length() == 0) ;
+        else {
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+            try {
+                updateDate = format.parse(date);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+        }
+
+        Set<String> updated = new HashSet<>();
+        CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.id,c.sitename FROM ulineaddressbook c " +
+                "where not is_defined(c.lastusedtime)", new CosmosQueryRequestOptions(), SiteBean.class);
+        for (SiteBean siteBean : familiesPagedIterable) {
+            String id = siteBean.getId();
+            String sitename = siteBean.getSitename();
+
+            CosmosPatchOperations cosmosPatchOperations = CosmosPatchOperations.create();
+            cosmosPatchOperations.add("/lastusedtime", updateDate);
+            CosmosItemResponse<SiteBean> dateCosmosItemResponse = container.patchItem(id, new PartitionKey(sitename), cosmosPatchOperations, SiteBean.class);
+            dateCosmosItemResponse.getItem();
+            updated.add(id);
+        }
+
+        return updated;
     }
 
     private static void loadFromCosmosDB() {

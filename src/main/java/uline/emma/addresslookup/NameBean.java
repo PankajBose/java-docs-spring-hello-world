@@ -7,7 +7,7 @@ public class NameBean {
     private String firstname;
     private String lastname;
     private Date lastusedtime;
-    private static final Date defualtDate;
+    public static final Date defualtDate;
 
     static {
         Calendar calendar = Calendar.getInstance();
