@@ -69,6 +69,22 @@ public class AddressLookup {
         return matchedData;
     }
 
+    @GetMapping(value = "/searchdb", produces = "application/json")
+    public static List<Map<String, String>> searchDB(@RequestParam String sites, @RequestParam String query) {
+        CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems(
+                "SELECT c.sitename,c.emailaddress,c.firstname,c.lastname,c.lastusedtime FROM ulineaddressbook c where " +
+                        "c.sitename IN ('" + sites + "') and startswith(c.emailaddress,'" + query + "',true)", new CosmosQueryRequestOptions(), SiteBean.class);
+
+        List<Map<String, String>> matchedData = new ArrayList<>();
+        for (SiteBean bean : familiesPagedIterable) {
+            Map<String, String> data = new HashMap<>();
+            data.put("e", bean.getEmailaddress());
+            data.put("n", bean.getFirstname());
+            matchedData.add(data);
+        }
+        return matchedData;
+    }
+
     @PostMapping("/add")
     public static String add(@Valid @RequestBody List<AddRequest> addRequests) {
         for (AddRequest request : addRequests) {
