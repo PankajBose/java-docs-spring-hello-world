@@ -1,9 +1,7 @@
 package uline.emma.addresslookup;
 
 import com.azure.cosmos.*;
-import com.azure.cosmos.models.CosmosItemRequestOptions;
-import com.azure.cosmos.models.CosmosQueryRequestOptions;
-import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import io.micrometer.core.instrument.util.IOUtils;
 import org.slf4j.Logger;
@@ -71,18 +69,38 @@ public class AddressLookup {
 
     @GetMapping(value = "/searchdb", produces = "application/json")
     public static List<Map<String, String>> searchDB(@RequestParam String sites, @RequestParam String query) {
-        CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems(
-                "SELECT c.sitename,c.emailaddress,c.firstname,c.lastname,c.lastusedtime FROM ulineaddressbook c where " +
-                        "c.sitename IN ('" + sites + "') and startswith(c.emailaddress,'" + query + "',true)", new CosmosQueryRequestOptions(), SiteBean.class);
+        final String[] siteNames = sites.split(",");
+        List<String> siteParams = new ArrayList<>(Arrays.asList(siteNames));
 
+        SqlQuerySpec spec = new SqlQuerySpec("SELECT c.emailaddress,c.firstname,c.lastname " +
+                "FROM ulineaddressbook c where array_contains(@sites,c.sitename) and " +
+                "(startswith(c.emailaddress,@query,true) or startswith(c.firstname,@query,true) or startswith(c.lastname,@query,true)) " +
+                "order by c.lastusedtime desc",
+                new SqlParameter("@sites", siteParams),
+                new SqlParameter("@query", query));
+
+        CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems(spec, new CosmosQueryRequestOptions(), SiteBean.class);
         List<Map<String, String>> matchedData = new ArrayList<>();
         for (SiteBean bean : familiesPagedIterable) {
             Map<String, String> data = new HashMap<>();
             data.put("e", bean.getEmailaddress());
-            data.put("n", bean.getFirstname());
+            data.put("n", getName(bean.getFirstname(), bean.getLastname()));
             matchedData.add(data);
         }
         return matchedData;
+    }
+
+    private static String getName(String firstname, String lastname) {
+        int firstnameLength = firstname.length();
+        int lastnameLength = lastname.length();
+
+        if (firstnameLength == 0 && lastnameLength == 0) return "";
+
+        if (lastnameLength == 0) return firstname;
+
+        if (firstnameLength == 0) return lastname;
+
+        return firstname + " " + lastname;
     }
 
     @PostMapping("/add")
