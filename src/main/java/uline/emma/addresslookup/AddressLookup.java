@@ -38,7 +38,7 @@ public class AddressLookup {
     @GetMapping(value = "/search", produces = "application/json")
     public static List<Map<String, String>> search(@RequestParam String sites, @RequestParam String query) {
         query = query.toLowerCase();
-        List<MatchedBean> foundNameBeans = new ArrayList<>();
+        Set<MatchedBean> foundNameBeans = new HashSet<>();
         final String[] siteNames = sites.split(",");
 
         for (String siteName : siteNames) {
@@ -55,10 +55,11 @@ public class AddressLookup {
             }
         }
 
-        foundNameBeans.sort((o1, o2) -> o2.getLastUsed().compareTo(o1.getLastUsed()));
+        List<MatchedBean> nameBeans = new ArrayList<>(foundNameBeans);
+        nameBeans.sort((o1, o2) -> o2.getLastUsed().compareTo(o1.getLastUsed()));
 
         List<Map<String, String>> matchedData = new ArrayList<>();
-        for (MatchedBean bean : foundNameBeans) {
+        for (MatchedBean bean : nameBeans) {
             Map<String, String> data = new HashMap<>();
             data.put("e", bean.getEmail());
             data.put("n", bean.getName());
