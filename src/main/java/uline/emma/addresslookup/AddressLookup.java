@@ -75,7 +75,7 @@ public class AddressLookup {
         List<String> siteParams = new ArrayList<>(Arrays.asList(siteNames));
 
         SqlQuerySpec spec = new SqlQuerySpec("SELECT c.emailaddress,c.firstname,c.lastname " +
-                "FROM ulineaddressbook c where array_contains(@sites,lower(c.sitename)) and " +
+                "FROM ulineaddressbook c where array_contains(lower(@sites),lower(c.sitename)) and " +
                 "(startswith(c.emailaddress,@query,true) or startswith(c.firstname,@query,true) or startswith(c.lastname,@query,true)) " +
                 "order by c.lastusedtime desc",
                 new SqlParameter("@sites", siteParams),
