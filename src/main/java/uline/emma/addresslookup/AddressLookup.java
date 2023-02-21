@@ -85,9 +85,14 @@ public class AddressLookup {
 
         CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems(spec, new CosmosQueryRequestOptions(), SiteBean.class);
         List<Map<String, String>> matchedData = new ArrayList<>();
+        Set<String> addedEmails = new HashSet<>();
         for (SiteBean bean : familiesPagedIterable) {
+            final String email = bean.getEmailaddress().toLowerCase();
+            if (addedEmails.contains(email)) continue;
+
+            addedEmails.add(email);
             Map<String, String> data = new HashMap<>();
-            data.put("e", bean.getEmailaddress());
+            data.put("e", email);
             data.put("n", getName(bean.getFirstname(), bean.getLastname()));
             matchedData.add(data);
         }
