@@ -48,8 +48,9 @@ public class AddressLookup {
                 final NameBean nameBean = entry.getValue();
                 String firstname = nameBean.getFirstname().toLowerCase();
                 String lastname = nameBean.getLastname().toLowerCase();
+                String displayname = nameBean.getDisplayname().toLowerCase();
 
-                if (email.startsWith(query) || firstname.startsWith(query) || lastname.startsWith(query)) {
+                if (email.startsWith(query) || firstname.startsWith(query) || lastname.startsWith(query) || displayname.startsWith(query)) {
                     foundNameBeans.add(new MatchedBean(email, nameBean.getName(), nameBean.getLastusedtime()));
                 }
             }
@@ -76,7 +77,8 @@ public class AddressLookup {
 
         SqlQuerySpec spec = new SqlQuerySpec("SELECT c.emailaddress,c.firstname,c.lastname " +
                 "FROM ulineaddressbook c where array_contains(@sites,lower(c.sitename)) and " +
-                "(startswith(c.emailaddress,@query,true) or startswith(c.firstname,@query,true) or startswith(c.lastname,@query,true)) " +
+                "(startswith(c.emailaddress,@query,true) or startswith(c.firstname,@query,true) or startswith(c.lastname,@query,true) " +
+                "or startswith(c.displayname,@query,true)) " +
                 "order by c.lastusedtime desc",
                 new SqlParameter("@sites", siteParams),
                 new SqlParameter("@query", query));
@@ -105,15 +107,17 @@ public class AddressLookup {
     @PostMapping("/add")
     public static String add(@Valid @RequestBody List<AddRequest> addRequests) {
         for (AddRequest request : addRequests) {
+            request.setSite(request.getSite().toLowerCase());
+
             Map<String, NameBean> personInfo = siteData.computeIfAbsent(request.getSite(), k -> new HashMap<>());
             final String email = request.getEmail().toLowerCase();
             final NameBean nameBean = personInfo.get(email);
             final Date currentDate = new Date();
             final String id = UUID.nameUUIDFromBytes(email.getBytes()).toString();
-            SiteBean siteBean = new SiteBean(id, request.getSite(), request.getFirstname(), request.getLastname(), email, currentDate);
+            SiteBean siteBean = new SiteBean(id, request.getSite(), request.getFirstname(), request.getLastname(), request.getDisplayname(), email, currentDate);
 
             if (nameBean == null) {
-                personInfo.put(email, new NameBean(request.getFirstname(), request.getLastname(), currentDate));
+                personInfo.put(email, new NameBean(request.getFirstname(), request.getLastname(), request.getDisplayname(), currentDate));
 
                 container.upsertItem(siteBean, new PartitionKey(siteBean.getSitename()), new CosmosItemRequestOptions());
             } else {
@@ -188,14 +192,15 @@ public class AddressLookup {
             CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
             queryOptions.setQueryMetricsEnabled(true);
 
-            CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.sitename,c.emailaddress,c.firstname,c.lastname,c.lastusedtime FROM ulineaddressbook c where c.emailaddress !=''", queryOptions, SiteBean.class);
+            CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.sitename,c.emailaddress,c.firstname,c.lastname,c.displayname,c.lastusedtime FROM ulineaddressbook c where c.emailaddress !=''", queryOptions, SiteBean.class);
             LOGGER.info("Container query created");
 
             for (SiteBean bean : familiesPagedIterable) {
                 if (loaded % 10_00_000 == 0) LOGGER.info("loaded data = " + loaded);
 
+                bean.setSitename(bean.getSitename().toLowerCase());
                 Map<String, NameBean> personInfo = siteData.computeIfAbsent(bean.getSitename(), k -> new HashMap<>());
-                personInfo.put(bean.getEmailaddress(), new NameBean(bean.getFirstname(), bean.getLastname(), bean.getLastusedtime()));
+                personInfo.put(bean.getEmailaddress(), new NameBean(bean.getFirstname(), bean.getLastname(), bean.getDisplayname(), bean.getLastusedtime()));
 
                 loaded++;
             }

@@ -6,6 +6,7 @@ import java.util.Date;
 public class NameBean {
     private String firstname;
     private String lastname;
+    private String displayname;
     private Date lastusedtime;
     public static final Date defualtDate;
 
@@ -23,9 +24,10 @@ public class NameBean {
     public NameBean() {
     }
 
-    public NameBean(String firstname, String lastname, Date lastusedtime) {
+    public NameBean(String firstname, String lastname, String displayname, Date lastusedtime) {
         this.firstname = firstname == null ? "" : firstname.trim();
         this.lastname = lastname == null ? "" : lastname.trim();
+        this.displayname = displayname == null ? "" : displayname.trim();
         this.lastusedtime = lastusedtime == null ? defualtDate : lastusedtime;
     }
 
@@ -43,6 +45,14 @@ public class NameBean {
 
     public void setLastname(String lastname) {
         this.lastname = lastname;
+    }
+
+    public String getDisplayname() {
+        return displayname;
+    }
+
+    public void setDisplayname(String displayname) {
+        this.displayname = displayname;
     }
 
     public Date getLastusedtime() {

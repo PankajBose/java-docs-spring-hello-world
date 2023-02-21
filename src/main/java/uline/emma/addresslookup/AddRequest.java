@@ -11,6 +11,7 @@ public class AddRequest {
     private String email;
     private String firstname;
     private String lastname;
+    private String displayname;
 
     public String getSite() {
         return site;
@@ -44,6 +45,14 @@ public class AddRequest {
         this.lastname = lastname;
     }
 
+    public String getDisplayname() {
+        return displayname;
+    }
+
+    public void setDisplayname(String displayname) {
+        this.displayname = displayname;
+    }
+
     @Override
     public String toString() {
         return "{" +
@@ -51,6 +60,7 @@ public class AddRequest {
                 ", email='" + email + '\'' +
                 ", firstname='" + firstname + '\'' +
                 ", lastname='" + lastname + '\'' +
+                ", displayname='" + displayname + '\'' +
                 '}';
     }
 }
