@@ -136,48 +136,52 @@ public class AddressLookup {
     }
 
     @PostMapping("/update")
-    public static void update(@RequestParam(required = false) String date) {
-        Date updateDate = NameBean.defualtDate;
-        if (date == null || date.trim().length() == 0) ;
-        else {
-            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-            try {
-                updateDate = format.parse(date);
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-        }
-
-        CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.id,c.sitename FROM ulineaddressbook c " +
-                "where not is_defined(c.lastusedtime)", new CosmosQueryRequestOptions(), SiteBean.class);
-        Map<String, Set<String>> idsToUpdate = new HashMap<>();
-        for (SiteBean siteBean : familiesPagedIterable) {
-            String id = siteBean.getId();
-            String sitename = siteBean.getSitename();
-
-            Set<String> ids = idsToUpdate.computeIfAbsent(sitename, k -> new HashSet<>());
-            ids.add(id);
-        }
-
-        for (Map.Entry<String, Set<String>> entry : idsToUpdate.entrySet()) {
-            String site = entry.getKey();
-            Set<String> ids = entry.getValue();
-
-            CosmosBatch cosmosBatch = CosmosBatch.createCosmosBatch(new PartitionKey(site));
-            for (String id : ids) {
-                CosmosPatchOperations cosmosPatchOperations = CosmosPatchOperations.create();
-                cosmosPatchOperations.add("/lastusedtime", updateDate);
-                cosmosBatch.patchItemOperation(id, cosmosPatchOperations);
-
-                if (cosmosBatch.getOperations().size() >= 100) {
-                    container.executeCosmosBatch(cosmosBatch);
-                    cosmosBatch = CosmosBatch.createCosmosBatch(new PartitionKey(site));
+    public static String update(@RequestParam(required = false) String date) {
+        new Thread(() -> {
+            Date updateDate = NameBean.defualtDate;
+            if (date == null || date.trim().length() == 0) ;
+            else {
+                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+                try {
+                    updateDate = format.parse(date);
+                } catch (ParseException e) {
+                    e.printStackTrace();
                 }
             }
 
-            if (cosmosBatch.getOperations().size() > 0)
-                container.executeCosmosBatch(cosmosBatch);
-        }
+            CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.id,c.sitename FROM ulineaddressbook c " +
+                    "where not is_defined(c.lastusedtime)", new CosmosQueryRequestOptions(), SiteBean.class);
+            Map<String, Set<String>> idsToUpdate = new HashMap<>();
+            for (SiteBean siteBean : familiesPagedIterable) {
+                String id = siteBean.getId();
+                String sitename = siteBean.getSitename();
+
+                Set<String> ids = idsToUpdate.computeIfAbsent(sitename, k -> new HashSet<>());
+                ids.add(id);
+            }
+
+            for (Map.Entry<String, Set<String>> entry : idsToUpdate.entrySet()) {
+                String site = entry.getKey();
+                Set<String> ids = entry.getValue();
+
+                CosmosBatch cosmosBatch = CosmosBatch.createCosmosBatch(new PartitionKey(site));
+                for (String id : ids) {
+                    CosmosPatchOperations cosmosPatchOperations = CosmosPatchOperations.create();
+                    cosmosPatchOperations.add("/lastusedtime", updateDate);
+                    cosmosBatch.patchItemOperation(id, cosmosPatchOperations);
+
+                    if (cosmosBatch.getOperations().size() >= 100) {
+                        container.executeCosmosBatch(cosmosBatch);
+                        cosmosBatch = CosmosBatch.createCosmosBatch(new PartitionKey(site));
+                    }
+                }
+
+                if (cosmosBatch.getOperations().size() > 0)
+                    container.executeCosmosBatch(cosmosBatch);
+            }
+        }).start();
+
+        return "Update is running in the background, it may take several minutes depending on the record count.";
     }
 
     private static void loadFromCosmosDB() {
