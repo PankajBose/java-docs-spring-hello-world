@@ -181,7 +181,15 @@ public class AddressLookup {
             }
         }).start();
 
-        return "Update is running in the background, it may take several minutes depending on the record count.";
+        CosmosPagedIterable<Object> emptyCount = container.queryItems("SELECT COUNT(1) ItemCount FROM ulineaddressbook c " +
+                "where not is_defined(c.lastusedtime)", new CosmosQueryRequestOptions(), Object.class);
+        long itemCount = 0;
+        for (Object item : emptyCount) {
+            itemCount = ((Map<String, Long>) item).getOrDefault("ItemCount", 0L);
+            break;
+        }
+
+        return "Updating " + itemCount + " documents in the background, it may take several minutes depending on the record count.";
     }
 
     private static void loadFromCosmosDB() {
