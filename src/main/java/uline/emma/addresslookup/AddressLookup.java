@@ -136,7 +136,7 @@ public class AddressLookup {
     }
 
     @PostMapping("/update")
-    public static void update(@RequestParam String date) {
+    public static void update(@RequestParam(required = false) String date) {
         Date updateDate = NameBean.defualtDate;
         if (date == null || date.trim().length() == 0) ;
         else {
