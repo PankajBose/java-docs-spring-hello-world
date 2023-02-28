@@ -79,7 +79,7 @@ public class AddressLookup {
                 "FROM ulineaddressbook c where array_contains(@sites,lower(c.sitename)) and " +
                 "(startswith(c.emailaddress,@query,true) or startswith(c.firstname,@query,true) or startswith(c.lastname,@query,true) " +
                 "or startswith(c.displayname,@query,true)) " +
-                "order by c.lastusedtime desc",
+                "order by c.lastusedtime desc, c.displayname asc",
                 new SqlParameter("@sites", siteParams),
                 new SqlParameter("@query", query));
 
