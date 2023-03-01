@@ -19,55 +19,18 @@ import java.util.*;
 @RestController
 public class AddressLookup {
     private static final Logger LOGGER = LoggerFactory.getLogger(AddressLookup.class);
-    private static final Map<String, Map<String, NameBean>> siteData = new HashMap<>();
     private static CosmosContainer container;
     private static final String welcomeContent = IOUtils.toString(AddressLookup.class.getClassLoader().getResourceAsStream("welcome-message.html"));
-    private static long loaded = 0;
 
     public static void main(String[] args) {
-        loadFromCosmosDB();
+        init();
 
         SpringApplication.run(AddressLookup.class, args);
     }
 
     @RequestMapping(value = "/", produces = "text/html")
     String welcome() {
-        return welcomeContent + " Loaded " + loaded + " documents.";
-    }
-
-    @GetMapping(value = "/search", produces = "application/json")
-    public static List<Map<String, String>> search(@RequestParam String sites, @RequestParam String query) {
-        query = query.toLowerCase();
-        Set<MatchedBean> foundNameBeans = new HashSet<>();
-        final String[] siteNames = sites.split(",");
-
-        for (String siteName : siteNames) {
-            Map<String, NameBean> personInfo = siteData.get(siteName);
-            if (personInfo != null) for (Map.Entry<String, NameBean> entry : personInfo.entrySet()) {
-                String email = entry.getKey().toLowerCase();
-                final NameBean nameBean = entry.getValue();
-                String firstname = nameBean.getFirstname().toLowerCase();
-                String lastname = nameBean.getLastname().toLowerCase();
-                String displayname = nameBean.getDisplayname().toLowerCase();
-
-                if (email.startsWith(query) || firstname.startsWith(query) || lastname.startsWith(query) || displayname.startsWith(query)) {
-                    foundNameBeans.add(new MatchedBean(email, nameBean.getName(), nameBean.getLastusedtime()));
-                }
-            }
-        }
-
-        List<MatchedBean> nameBeans = new ArrayList<>(foundNameBeans);
-        nameBeans.sort((o1, o2) -> o2.getLastUsed().compareTo(o1.getLastUsed()));
-
-        List<Map<String, String>> matchedData = new ArrayList<>();
-        for (MatchedBean bean : nameBeans) {
-            Map<String, String> data = new HashMap<>();
-            data.put("e", bean.getEmail());
-            data.put("n", bean.getName());
-            matchedData.add(data);
-        }
-
-        return matchedData;
+        return welcomeContent;
     }
 
     @GetMapping(value = "/searchdb", produces = "application/json")
@@ -114,22 +77,12 @@ public class AddressLookup {
         for (AddRequest request : addRequests) {
             request.setSite(request.getSite().toLowerCase());
 
-            Map<String, NameBean> personInfo = siteData.computeIfAbsent(request.getSite(), k -> new HashMap<>());
             final String email = request.getEmail().toLowerCase();
-            final NameBean nameBean = personInfo.get(email);
             final Date currentDate = new Date();
             final String id = UUID.nameUUIDFromBytes(email.getBytes()).toString();
             SiteBean siteBean = new SiteBean(id, request.getSite(), request.getFirstname(), request.getLastname(), request.getDisplayname(), email, currentDate);
 
-            if (nameBean == null) {
-                personInfo.put(email, new NameBean(request.getFirstname(), request.getLastname(), request.getDisplayname(), currentDate));
-
-                container.upsertItem(siteBean, new PartitionKey(siteBean.getSitename()), new CosmosItemRequestOptions());
-            } else {
-                nameBean.setLastusedtime(currentDate);
-
-                container.upsertItem(siteBean, new PartitionKey(siteBean.getSitename()), new CosmosItemRequestOptions());
-            }
+            container.upsertItem(siteBean, new PartitionKey(siteBean.getSitename()), new CosmosItemRequestOptions());
         }
 
         return "Data added";
@@ -192,35 +145,17 @@ public class AddressLookup {
         return "Updating " + itemCount + " documents in the background, it may take several minutes depending on the record count.";
     }
 
-    private static void loadFromCosmosDB() {
-        new Thread(() -> {
-            CosmosClient client = new CosmosClientBuilder()
-                    .endpoint(AccountSettings.HOST)
-                    .key(AccountSettings.MASTER_KEY)
-                    .consistencyLevel(ConsistencyLevel.EVENTUAL)
-                    .buildClient();
+    private static void init() {
+        CosmosClient client = new CosmosClientBuilder()
+                .endpoint(AccountSettings.HOST)
+                .key(AccountSettings.MASTER_KEY)
+                .consistencyLevel(ConsistencyLevel.EVENTUAL)
+                .buildClient();
 
-            CosmosDatabase database = client.getDatabase("my-database");
-            LOGGER.info("Database connected : my-database");
+        CosmosDatabase database = client.getDatabase("my-database");
+        LOGGER.info("Database connected : my-database");
 
-            container = database.getContainer("ulineaddressbook");
-            LOGGER.info("Container read successful : ulineaddressbook");
-
-            CosmosQueryRequestOptions queryOptions = new CosmosQueryRequestOptions();
-            queryOptions.setQueryMetricsEnabled(true);
-
-            CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.sitename,c.emailaddress,c.firstname,c.lastname,c.displayname,c.lastusedtime FROM ulineaddressbook c where c.emailaddress !=''", queryOptions, SiteBean.class);
-            LOGGER.info("Container query created");
-
-            for (SiteBean bean : familiesPagedIterable) {
-                if (loaded % 10_00_000 == 0) LOGGER.info("loaded data = " + loaded);
-
-                bean.setSitename(bean.getSitename().toLowerCase());
-                Map<String, NameBean> personInfo = siteData.computeIfAbsent(bean.getSitename(), k -> new HashMap<>());
-                personInfo.put(bean.getEmailaddress(), new NameBean(bean.getFirstname(), bean.getLastname(), bean.getDisplayname(), bean.getLastusedtime()));
-
-                loaded++;
-            }
-        }).start();
+        container = database.getContainer("ulineaddressbook");
+        LOGGER.info("Container read successful : ulineaddressbook");
     }
 }
