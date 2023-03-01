@@ -135,7 +135,7 @@ public class AddressLookup {
         }).start();
 
         CosmosPagedIterable<Object> emptyCount = container.queryItems("SELECT COUNT(1) ItemCount FROM ulineaddressbook c " +
-                "where not is_defined(c.lastusedtime)", new CosmosQueryRequestOptions(), Object.class);
+                "where (not is_defined(c.lastusedtime) or c.lastusedtime='946753200000')", new CosmosQueryRequestOptions(), Object.class);
         long itemCount = 0;
         for (Object item : emptyCount) {
             itemCount = ((Map<String, Long>) item).getOrDefault("ItemCount", 0L);
