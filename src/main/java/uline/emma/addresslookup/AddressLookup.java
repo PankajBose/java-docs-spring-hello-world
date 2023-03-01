@@ -103,7 +103,7 @@ public class AddressLookup {
             }
 
             CosmosPagedIterable<SiteBean> familiesPagedIterable = container.queryItems("SELECT c.id,c.sitename FROM ulineaddressbook c " +
-                    "where not is_defined(c.lastusedtime)", new CosmosQueryRequestOptions(), SiteBean.class);
+                    "where (not is_defined(c.lastusedtime) or c.lastusedtime='946753200000')", new CosmosQueryRequestOptions(), SiteBean.class);
             Map<String, Set<String>> idsToUpdate = new HashMap<>();
             for (SiteBean siteBean : familiesPagedIterable) {
                 String id = siteBean.getId();
