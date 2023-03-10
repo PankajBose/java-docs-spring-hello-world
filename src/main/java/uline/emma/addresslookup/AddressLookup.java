@@ -57,6 +57,8 @@ public class AddressLookup {
             Map<String, String> data = new HashMap<>();
             data.put("e", email);
             data.put("n", getName(bean.getFirstname(), bean.getLastname()));
+            data.put("f",bean.getFirstname());
+            data.put("l",bean.getLastname());
             matchedData.add(data);
         }
         return matchedData;
